@@ -1,7 +1,6 @@
 package ai.example.springai.controller;
 
 
-
 import ai.example.springai.service.SpringAiService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -25,7 +24,7 @@ public class SpringAIController {
     @RequestMapping("/message")
     public String sendMessage(@RequestParam(value = "message") String message) {
 
-         return service.sendMessage(message);
+        return service.sendMessage(message);
     }
 
 
@@ -53,7 +52,6 @@ public class SpringAIController {
     public ResponseEntity chat(@RequestParam String message) {
         return ResponseEntity.ok(service.ragChat(message));
     }
-
 
 
 }

@@ -102,7 +102,7 @@ public class ParagraphTextReader implements DocumentReader {
 			this.customMetadata.put(CHARSET_METADATA, this.charset.name());
 			this.customMetadata.put(SOURCE_METADATA, this.resource.getFilename());
 
-			List<String> paragraphs = Arrays.asList(document.split("\n"));
+			List<String> paragraphs = Arrays.asList(document.split("\r\n"));
 
 			//采用窗口滑动读取
 			int startIndex = 0;

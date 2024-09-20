@@ -41,7 +41,7 @@ public class SpringAiServiceImpl implements SpringAiService {
     @Autowired
     private VectorStore vectorStore;
 
-    private static final String PATH = "/Users/caoyang/Documents/ZY/ragdemo/rag/file/";
+    private static final String PATH = "/Users/caoyang/Documents/workspace/chat-ollama/rag/";
 
 
     @Autowired
@@ -129,7 +129,7 @@ public class SpringAiServiceImpl implements SpringAiService {
             int minParagraphNum = maxParagraphNum;
             for (Document document : docListEntry.getValue()) {
                 //文档内容根据回车进行分段
-                String[] tempPs = document.getContent().split("\n");
+                String[] tempPs = document.getContent().split("\r\n");
                 //获取文档开始段落编码
                 int startParagraphNumber = (int) document.getMetadata().get(START_PARAGRAPH_NUMBER);
                 if (minParagraphNum > startParagraphNumber) {
@@ -162,11 +162,11 @@ public class SpringAiServiceImpl implements SpringAiService {
                 .map(Document::getContent)
                 .collect(Collectors.joining("\n"));
 
-        //封装prompt并调用大模型
-        String question = getChatPrompt2String(message, content);
+        String systemInfo = "根据以下提供的文档使用简体中文回答问题，" +
+                "不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。\n"+content;
 
-        SystemMessage systemMessage = new SystemMessage("使用简体中文回答");
-        UserMessage userMessage = new UserMessage(question);
+        SystemMessage systemMessage = new SystemMessage(systemInfo);
+        UserMessage userMessage = new UserMessage(message);
         List<Message> messages = new ArrayList<>();
         messages.add(systemMessage);
         messages.add(userMessage);
@@ -180,20 +180,6 @@ public class SpringAiServiceImpl implements SpringAiService {
         return chatResponse.getResult().getOutput().getContent();
     }
 
-    /**
-     * 获取prompt
-     *
-     * @param message 提问内容
-     * @param context 上下文
-     * @return prompt
-     */
-    private String getChatPrompt2String(String message, String context) {
-        String promptText = """
-                请用仅用以下内容回答"%s":
-                %s
-                """;
-        return String.format(promptText, message, context);
-    }
 
 
 
