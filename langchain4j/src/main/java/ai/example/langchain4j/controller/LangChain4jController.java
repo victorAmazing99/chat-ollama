@@ -1,5 +1,7 @@
 package ai.example.langchain4j.controller;
 
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +18,7 @@ public class LangChain4jController {
 
     @GetMapping("/assistant")
     public String assistant(@RequestParam(value = "message", defaultValue = "What is the time now?") String message) {
-        return chatModel.generate(message);
+        return chatModel.generate(new SystemMessage("请全部用英语回答"),new UserMessage(message)).content().text();
     }
 
 }

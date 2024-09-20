@@ -7,6 +7,8 @@ import jakarta.annotation.Resource;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -162,7 +164,14 @@ public class SpringAiServiceImpl implements SpringAiService {
 
         //封装prompt并调用大模型
         String question = getChatPrompt2String(message, content);
-        Prompt prompt = new Prompt(question, OllamaOptions.create()
+
+        SystemMessage systemMessage = new SystemMessage("使用简体中文回答");
+        UserMessage userMessage = new UserMessage(question);
+        List<Message> messages = new ArrayList<>();
+        messages.add(systemMessage);
+        messages.add(userMessage);
+
+        Prompt prompt = new Prompt(messages, OllamaOptions.create()
                 //  .withModel("llama3:8b")
                 .withMainGPU(1)
                 .withTemperature(0.4f));
@@ -180,7 +189,7 @@ public class SpringAiServiceImpl implements SpringAiService {
      */
     private String getChatPrompt2String(String message, String context) {
         String promptText = """
-                请用仅用以下内容中文回答"%s":
+                请用仅用以下内容回答"%s":
                 %s
                 """;
         return String.format(promptText, message, context);
