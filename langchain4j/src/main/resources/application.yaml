@@ -1,0 +1,17 @@
+server:
+  port: 9998
+
+spring:
+  application:
+    name: langchain4j
+langchain4j:
+  ollama:
+    chat-model:
+      model-name: qwen:0.5b
+      base-url: http://192.168.0.26:11434
+    streaming-chat-model:
+      model-name: qwen:0.5b
+      base-url: http://192.168.0.26:11434
+    embedding-model:
+      model-name: mofanke/dmeta-embedding-zh:latest
+      base-url: http://192.168.0.26:11434
