@@ -1,0 +1,22 @@
+server:
+  port: 9999
+
+spring:
+  application:
+    name: chat-ollama
+  ai:
+    ollama:
+      base-url: http://192.168.1.124:11434
+      chat:
+        options:
+          model: qwen:0.5b
+      embedding:
+        options:
+          model: mofanke/dmeta-embedding-zh:latest
+    vectorstore:
+      chroma:
+        client:
+          host: http://127.0.0.1
+          port: 8000
+        initialize-schema: true
+        collection-name: ai_collection
