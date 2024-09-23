@@ -90,21 +90,24 @@ public class SpringAiServiceImpl implements SpringAiService {
         String content = tika.parseToString(file.getInputStream(), metadata);
 
         // 按段落分割
-        List<String> paragraphs = Arrays.stream(content.split("\n\n")).collect(Collectors.toList());
+        List<String> paragraphs = Arrays.stream(content.replaceAll("\r\n", "\n").split("\n")).collect(Collectors.toList());
 
 
     }
 
     @Override
     public List<Document> search(String keyword) {
-        return mergeDocuments(vectorStore.similaritySearch(SearchRequest.query(keyword)));
+        return mergeDocuments(vectorStore.similaritySearch(SearchRequest.defaults()
+                        .withQuery(keyword)
+                        .withTopK(4)
+                        .withSimilarityThreshold(0.4f)));
     }
 
 
     private List<Document> paragraphTextReader(File file) {
         List<Document> docs = null;
         try {
-            ParagraphTextReader reader = new ParagraphTextReader(new FileUrlResource(file.toURI().toURL()), 5);
+            ParagraphTextReader reader = new ParagraphTextReader(new FileUrlResource(file.toURI().toURL()), 1);
             reader.getCustomMetadata().put("filename", file.getName());
             reader.getCustomMetadata().put("filepath", file.getAbsolutePath());
             docs = reader.get();
@@ -129,7 +132,7 @@ public class SpringAiServiceImpl implements SpringAiService {
             int minParagraphNum = maxParagraphNum;
             for (Document document : docListEntry.getValue()) {
                 //文档内容根据回车进行分段
-                String[] tempPs = document.getContent().split("\r\n");
+                String[] tempPs = document.getContent().replaceAll("\r\n", "\n").split("\n");
                 //获取文档开始段落编码
                 int startParagraphNumber = (int) document.getMetadata().get(START_PARAGRAPH_NUMBER);
                 if (minParagraphNum > startParagraphNumber) {
