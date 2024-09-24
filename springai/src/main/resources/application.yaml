@@ -14,9 +14,8 @@ spring:
         options:
           model: mofanke/dmeta-embedding-zh:latest
     vectorstore:
-      chroma:
-        client:
-          host: http://127.0.0.1
-          port: 8000
+      redis:
+        uri:  http://127.0.0.1:6379
+        index: chat-ollama
         initialize-schema: true
-        collection-name: ai_collection
+        prefix: chat-ollama
