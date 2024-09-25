@@ -27,8 +27,12 @@ public class SpringAIController {
         return service.sendMessage(message);
     }
 
-
     @RequestMapping("/message2")
+    public String sendMessage2(@RequestParam(value = "message") String message) {
+
+        return service.sendMessage2(message);
+    }
+    @RequestMapping("/message3")
     public Flux<ChatResponse> generateStream(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
         return service.generateStream(message);
     }

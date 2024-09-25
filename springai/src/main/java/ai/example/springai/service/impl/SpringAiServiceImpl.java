@@ -7,6 +7,7 @@ import jakarta.annotation.Resource;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -43,6 +44,9 @@ public class SpringAiServiceImpl implements SpringAiService {
 
     private static final String PATH = "/Users/caoyang/Documents/workspace/chat-ollama/rag/";
 
+    private static HashMap<String,List<Message>> chatHistory = new HashMap<>();
+
+    private static Integer maxHistorySize = 10;
 
     @Autowired
     public SpringAiServiceImpl(OllamaChatModel chatModel) {
@@ -52,9 +56,33 @@ public class SpringAiServiceImpl implements SpringAiService {
     public String sendMessage(String message) {
         ChatResponse response = chatModel.call(new Prompt(message, OllamaOptions.create()
                 //  .withModel("llama3:8b")   //可动态选择模型
-                .withTemperature(0.4f)));
+                .withTemperature(0.4)));
         return response.getResult().getOutput().getContent();
     }
+
+    @Override
+    public String sendMessage2(String message) {
+        //根据不同会话Id，获取历史记忆
+        List<Message> chatHistorys =chatHistory.get("1");
+        //判断chatHistoryMap是否为空
+        if(chatHistorys == null){
+            //如果为空,则创建一个会话list
+            chatHistorys = new ArrayList<>();
+            chatHistory.put("1",chatHistorys);
+        }else{
+
+            if(chatHistorys.size() > maxHistorySize){
+                chatHistorys = chatHistorys.subList(chatHistorys.size()-maxHistorySize-1,chatHistorys.size());
+            }
+        }
+        //将提问进行记忆
+        chatHistorys.add(chatHistorys.size()+1,new UserMessage(message));
+        ChatResponse response = chatModel.call(new Prompt(chatHistorys));
+        chatHistorys.add(chatHistorys.size()+1,new AssistantMessage(response.getResult().getOutput().getContent()));
+        return response.getResult().getOutput().getContent();
+        }
+
+
 
     @Override
     public Flux<ChatResponse> generateStream(String message) {
@@ -177,7 +205,7 @@ public class SpringAiServiceImpl implements SpringAiService {
         Prompt prompt = new Prompt(messages, OllamaOptions.create()
                 //  .withModel("llama3:8b")
                 .withMainGPU(1)
-                .withTemperature(0.4f));
+                .withTemperature(0.4));
 
         ChatResponse chatResponse = chatModel.call(prompt);
         return chatResponse.getResult().getOutput().getContent();

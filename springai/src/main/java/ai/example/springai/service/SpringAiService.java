@@ -17,4 +17,6 @@ public interface SpringAiService {
     List<Document> search(String keyword);
 
     String ragChat(String message);
+
+    String sendMessage2(String message);
 }
