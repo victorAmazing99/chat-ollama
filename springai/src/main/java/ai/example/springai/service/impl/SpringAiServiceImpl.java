@@ -76,9 +76,9 @@ public class SpringAiServiceImpl implements SpringAiService {
             }
         }
         //将提问进行记忆
-        chatHistorys.add(chatHistorys.size()+1,new UserMessage(message));
+        chatHistorys.add(chatHistorys.size(),new UserMessage(message));
         ChatResponse response = chatModel.call(new Prompt(chatHistorys));
-        chatHistorys.add(chatHistorys.size()+1,new AssistantMessage(response.getResult().getOutput().getContent()));
+        chatHistorys.add(chatHistorys.size(),new AssistantMessage(response.getResult().getOutput().getContent()));
         return response.getResult().getOutput().getContent();
         }
 
