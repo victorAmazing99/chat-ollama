@@ -9,6 +9,7 @@ import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.MemoryId;
+import dev.langchain4j.service.spring.AiService;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -21,20 +22,23 @@ public class LangChain4jController {
 
     OllamaEmbeddingModel embeddingModel;
 
+    Assistant assistant;
+
     LangChain4jController(OllamaChatModel chatModel, OllamaEmbeddingModel embeddingModel) {
         this.chatModel = chatModel;
         this.embeddingModel = embeddingModel;
+        this.assistant = AiServices.builder(Assistant.class)
+                .chatLanguageModel(chatModel)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
+                .build();
     }
-
+    @AiService
     interface Assistant {
 
         String chat(@MemoryId String memoryId, @dev.langchain4j.service.UserMessage String userMessage);
     }
 
-    Assistant assistant = AiServices.builder(Assistant.class)
-            .chatLanguageModel(chatModel)
-            .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
-            .build();
+
 
     /**
      * 聊天
