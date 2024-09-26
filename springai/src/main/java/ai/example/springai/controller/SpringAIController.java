@@ -22,16 +22,29 @@ public class SpringAIController {
     SpringAiService service;
 
     @RequestMapping("/message")
+    /**
+     * 基础的模型访问
+     */
     public String sendMessage(@RequestParam(value = "message") String message) {
 
         return service.sendMessage(message);
     }
 
+    /**
+     * 带记忆的基础访问
+     * @param message
+     * @return
+     */
     @RequestMapping("/message2")
     public String sendMessage2(@RequestParam(value = "message") String message) {
-
-        return service.sendMessage2(message);
+        return  service.sendMessage2(message);
     }
+
+    /**
+     * 流式访问
+     * @param message
+     * @return
+     */
     @RequestMapping("/message3")
     public Flux<ChatResponse> generateStream(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
         return service.generateStream(message);

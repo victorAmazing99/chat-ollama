@@ -2,6 +2,7 @@ package ai.example.springai.service.impl;
 
 import ai.example.springai.read.ParagraphTextReader;
 import ai.example.springai.service.SpringAiService;
+import cn.hutool.core.lang.hash.Hash;
 import cn.hutool.core.util.ArrayUtil;
 import jakarta.annotation.Resource;
 import org.apache.tika.Tika;
@@ -145,7 +146,11 @@ public class SpringAiServiceImpl implements SpringAiService {
         return docs;
     }
 
-
+    /**
+     * 使用文档chroma，pgvtegre
+     * @param documentList
+     * @return
+     */
     private List<Document> mergeDocuments(List<Document> documentList) {
         List<Document> mergeDocuments = new ArrayList();
         //根据文档来源进行分组
@@ -186,15 +191,15 @@ public class SpringAiServiceImpl implements SpringAiService {
     @Override
     public String ragChat(String message) {
         //查询获取文档信息
-        List<Document> documents = search(message);
+        List<Document> documents = vectorStore.similaritySearch(message);
 
         //提取文本内容
         String content = documents.stream()
                 .map(Document::getContent)
                 .collect(Collectors.joining("\n"));
 
-        String systemInfo = "根据以下提供的文档使用简体中文回答问题，" +
-                "不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。\n"+content;
+        String systemInfo = "根据以下提供的文档使用简体中文回答问题:\n" + content +
+                "不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。";
 
         SystemMessage systemMessage = new SystemMessage(systemInfo);
         UserMessage userMessage = new UserMessage(message);
@@ -210,8 +215,6 @@ public class SpringAiServiceImpl implements SpringAiService {
         ChatResponse chatResponse = chatModel.call(prompt);
         return chatResponse.getResult().getOutput().getContent();
     }
-
-
 
 
 
