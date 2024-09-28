@@ -5,12 +5,17 @@ import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
+import dev.langchain4j.model.output.Response;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.spring.AiService;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 
 @RestController
@@ -22,33 +27,77 @@ public class LangChain4jController {
 
     OllamaEmbeddingModel embeddingModel;
 
+    OllamaStreamingChatModel streamingChatModel;
+
     Assistant assistant;
 
-    LangChain4jController(OllamaChatModel chatModel, OllamaEmbeddingModel embeddingModel) {
+    SteamAssistant steamAssistant;
+
+
+    LangChain4jController(OllamaChatModel chatModel, OllamaEmbeddingModel embeddingModel, OllamaStreamingChatModel streamingChatModel) {
         this.chatModel = chatModel;
         this.embeddingModel = embeddingModel;
+        this.streamingChatModel = streamingChatModel;
         this.assistant = AiServices.builder(Assistant.class)
                 .chatLanguageModel(chatModel)
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
                 .build();
+        this.steamAssistant = AiServices.builder(SteamAssistant.class)
+                .streamingChatLanguageModel(streamingChatModel)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.withMaxMessages(10))
+                .build();
     }
+
     @AiService
     interface Assistant {
 
         String chat(@MemoryId String memoryId, @dev.langchain4j.service.UserMessage String userMessage);
     }
 
+    @AiService
+    interface SteamAssistant {
+
+      void chat(@MemoryId String memoryId, @dev.langchain4j.service.UserMessage String userMessage);
+    }
 
 
     /**
      * 聊天
+     *
      * @param message
      * @return
      */
     @GetMapping("/assistant")
     public String assistant(@RequestParam(value = "message", defaultValue = "What is the time now?") String message) {
-        return chatModel.generate(new SystemMessage("请全部用英语回答"),new UserMessage(message)).content().text();
+        return chatModel.generate(new SystemMessage("请全部用英语回答"), new UserMessage(message)).content().text();
     }
+
+    /**
+     * 流式访问
+     * @return
+     */
+    @GetMapping(value = "/steamAssistant",produces = MediaType.APPLICATION_NDJSON_VALUE)
+    public Flux<String> steamAssistant(@RequestParam(value = "message", defaultValue = "What is the time now?") String message) {
+        return Flux.create(emitter -> {
+            streamingChatModel.generate(message, new StreamingResponseHandler<AiMessage>() {
+                @Override
+                public void onNext(String token) {
+                    emitter.next(token); // 发送
+                }
+
+                @Override
+                public void onComplete(Response<AiMessage> response) {
+                    emitter.complete(); // 完成流
+                }
+
+                @Override
+                public void onError(Throwable error) {
+                    emitter.error(error);
+                }
+            });
+        });
+    }
+
 
     /**
      * 有记忆的问答
