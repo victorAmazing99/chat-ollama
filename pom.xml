@@ -87,6 +87,13 @@
                 <version>0.34.0</version>
             </dependency>
 
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-redis</artifactId>
+                <version>0.34.0</version>
+            </dependency>
+
+
         </dependencies>
     </dependencyManagement>
     <repositories>

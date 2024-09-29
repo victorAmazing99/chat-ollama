@@ -1,7 +1,4 @@
-package ai.example.langchain4j.cofing;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+package ai.example.langchain4j.config;
 
 //@Component
 //@ConfigurationProperties(prefix = "langchain4j.ollama")

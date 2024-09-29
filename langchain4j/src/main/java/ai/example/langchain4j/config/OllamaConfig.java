@@ -1,11 +1,10 @@
-package ai.example.langchain4j.cofing;
+package ai.example.langchain4j.config;
 
 
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 //@Configuration
 public class OllamaConfig {
