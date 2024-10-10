@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "langchain4j.store")
+@ConfigurationProperties(prefix = "langchain4j.embeddingstore")
 public class StoreProperties {
 
     private RedisProperties redis;

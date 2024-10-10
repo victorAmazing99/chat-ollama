@@ -7,13 +7,13 @@ spring:
 langchain4j:
   ollama:
     chat-model:
-      model-name: qwen:0.5b
+      model-name: qwen2:latest
       base-url: http://127.0.0.1:11434
       top-k: 5
       top-p:  0.9
       temperature: 0.4
     streaming-chat-model:
-      model-name: qwen:0.5b
+      model-name: qwen2:latest
       base-url: http://127.0.0.1:11434
       top-k: 5
       top-p: 0.9
@@ -21,3 +21,8 @@ langchain4j:
     embedding-model:
       model-name: nomic-embed-text:latest
       base-url: http://127.0.0.1:11434
+  embeddingstore:
+      redis:
+        host: localhost
+        port: 6379
+        password:

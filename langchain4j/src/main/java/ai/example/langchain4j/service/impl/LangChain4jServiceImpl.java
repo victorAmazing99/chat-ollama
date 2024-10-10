@@ -27,12 +27,14 @@ import dev.langchain4j.service.spring.AiService;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import dev.langchain4j.store.embedding.redis.RedisEmbeddingStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import dev.langchain4j.data.document.Document;
 import static dev.langchain4j.data.document.Metadata.metadata;
 import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocument;
+import static dev.langchain4j.data.document.loader.FileSystemDocumentLoader.loadDocuments;
 import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -43,6 +45,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -53,20 +56,21 @@ public class LangChain4jServiceImpl implements LangChain4jService {
     static OllamaEmbeddingModel embeddingModel;
 
     static OllamaChatModel chatModel;
-    public LangChain4jServiceImpl(OllamaEmbeddingModel embeddingModel, OllamaChatModel chatModel) {
+
+    static EmbeddingStore<TextSegment> embeddingStore;
+
+    public LangChain4jServiceImpl(OllamaEmbeddingModel embeddingModel, OllamaChatModel chatModel, EmbeddingStore<TextSegment> embeddingStore) {
         this.embeddingModel = embeddingModel;
         this.chatModel = chatModel;
+        this.embeddingStore = embeddingStore;
     }
 
-    @Autowired
-    EmbeddingStore<TextSegment> embeddingStore;
     @Override
     public String upload(MultipartFile file) {
         AssistantRag assistant = createAssistant();
 
         createAssistant();
 
-        assistant.chat("1","hello world");
 
         return null;
     }
@@ -90,7 +94,7 @@ public class LangChain4jServiceImpl implements LangChain4jService {
 
     private static AssistantRag createAssistant() {
 
-        EmbeddingStore<TextSegment> embeddingStore = embed(toPath("documents/miles-of-smiles-terms-of-use.txt"), embeddingModel);
+        EmbeddingStore<TextSegment> embeddingStore = embed(toPath("documents/"), embeddingModel);
 
         ContentRetriever contentRetriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
@@ -135,17 +139,27 @@ public class LangChain4jServiceImpl implements LangChain4jService {
                 .build();
     }
 
-
+    /**
+     * 将文档嵌入到向量空间
+     * @param documentPath
+     * @param embeddingModel
+     * @return
+     */
     private static EmbeddingStore<TextSegment> embed(Path documentPath, EmbeddingModel embeddingModel) {
         DocumentParser documentParser = new TextDocumentParser();
-        Document document = loadDocument(documentPath, documentParser);
+
+
+        List<Document> documents = loadDocuments(documentPath, glob("*.txt"));
 
         DocumentSplitter splitter = DocumentSplitters.recursive(300, 0);
-        List<TextSegment> segments = splitter.split(document);
+        List<TextSegment> segments = new ArrayList<TextSegment>();
+
+        for(Document document : documents ){
+            segments.addAll(splitter.split(document));
+        }
 
         List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
 
-        EmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
         embeddingStore.addAll(embeddings, segments);
         return embeddingStore;
     }
