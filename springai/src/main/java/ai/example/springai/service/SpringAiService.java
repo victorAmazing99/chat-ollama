@@ -18,5 +18,5 @@ public interface SpringAiService {
 
     String ragChat(String message);
 
-    String sendMessage2(String message);
+    String sendMessage2(String sessionId,String message);
 }

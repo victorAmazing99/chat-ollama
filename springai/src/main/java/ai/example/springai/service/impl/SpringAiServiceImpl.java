@@ -62,14 +62,14 @@ public class SpringAiServiceImpl implements SpringAiService {
     }
 
     @Override
-    public String sendMessage2(String message) {
+    public String sendMessage2(String sessionId,String message) {
         //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys =chatHistory.get("1");
+        List<Message> chatHistorys =chatHistory.get(sessionId);
         //判断chatHistoryMap是否为空
         if(chatHistorys == null){
             //如果为空,则创建一个会话list
             chatHistorys = new ArrayList<>();
-            chatHistory.put("1",chatHistorys);
+            chatHistory.put(sessionId,chatHistorys);
         }else{
 
             if(chatHistorys.size() > maxHistorySize){

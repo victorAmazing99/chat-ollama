@@ -101,7 +101,7 @@ public class ParagraphTextReader implements DocumentReader {
 			// Inject source information as a metadata.
 			this.customMetadata.put(CHARSET_METADATA, this.charset.name());
 			this.customMetadata.put(SOURCE_METADATA, this.resource.getFilename());
-
+            //根据换行进行分段,并处理系统直接不统一的换行问题
 			List<String> paragraphs = Arrays.asList(document.replaceAll("\r\n", "\n").split("\n"));
 
 			//采用窗口滑动读取

@@ -8,7 +8,6 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.segment.TextSegment;
-import dev.langchain4j.internal.Utils;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.input.Prompt;
@@ -23,6 +22,7 @@ import dev.langchain4j.rag.query.Query;
 import dev.langchain4j.rag.query.router.QueryRouter;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.MemoryId;
+import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.spring.AiService;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -167,7 +167,7 @@ public class LangChain4jServiceImpl implements LangChain4jService {
     @AiService
     interface AssistantRag {
 
-        String chat(@MemoryId String memoryId, @dev.langchain4j.service.UserMessage String userMessage);
+        String chat(@MemoryId String memoryId, @UserMessage String userMessage);
     }
 
 

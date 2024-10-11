@@ -37,8 +37,8 @@ public class SpringAIController {
      * @return
      */
     @RequestMapping("/message2")
-    public String sendMessage2(@RequestParam(value = "message") String message) {
-        return  service.sendMessage2(message);
+    public String sendMessage2(@RequestParam(value = "sessionId",defaultValue = "1") String sessionId, @RequestParam(value = "message") String message) {
+        return  service.sendMessage2(sessionId,message);
     }
 
     /**

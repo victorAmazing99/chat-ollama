@@ -21,6 +21,13 @@ langchain4j:
     embedding-model:
       model-name: nomic-embed-text:latest
       base-url: http://127.0.0.1:11434
+  store:
+    redis:
+      host: redis
+      port: 6379
+      password: redis
+      database: 0
+      max_connections: 10
   embeddingstore:
       redis:
         host: localhost

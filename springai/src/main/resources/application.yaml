@@ -6,10 +6,10 @@ spring:
     name: chat-ollama
   ai:
     ollama:
-      base-url: http://127.0.0.1:11434
+      base-url: http://192.168.0.26:11434
       chat:
         options:
-          model: qwen:7b
+          model: llama3:8b
       embedding:
         options:
           model: mofanke/dmeta-embedding-zh:latest

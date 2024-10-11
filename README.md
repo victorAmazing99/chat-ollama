@@ -1,27 +1,24 @@
-# Getting Started
+# Chat-ollama 
 
-### Reference Documentation
+## 介绍
 
-For further reference, please consider the following sections:
+Chat-ollama是一个基于Ollama的聊天机器人demo，可以用来快速构建一个基于Ollama的聊天机器人。
 
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/3.3.4/maven-plugin)
-* [Create an OCI image](https://docs.spring.io/spring-boot/3.3.4/maven-plugin/build-image.html)
-* [Spring Web](https://docs.spring.io/spring-boot/docs/3.3.4/reference/htmlsingle/index.html#web)
+因基于Ollama 需要自行搭建，对于Ollama的使用可以参考[Ollama官网](https://ollama.com/)
 
-### Guides
+每个人的机器性能不同，建议根据实际情况选择不同的聊天模型
 
-The following guides illustrate how to use some features concretely:
 
-* [Building a RESTful Web Service](https://spring.io/guides/gs/rest-service/)
-* [Serving Web Content with Spring MVC](https://spring.io/guides/gs/serving-web-content/)
-* [Building REST services with Spring](https://spring.io/guides/tutorials/rest/)
 
-### Maven Parent overrides
+### 项目结构
+项目中主要使用了langchain4j 与 spring-ai 2套框架进行搭建，如需自行搭中可按自己所需进行框架选择。
+ 
+项目中的Rag 使用了redis，因此需要redis配置。但langchain4j 与 spring-ai 支持更多的向量数据库，如需更改可自行选择
 
-Due to Maven's design, elements are inherited from the parent POM to the project POM.
-While most of the inheritance is fine, it also inherits unwanted elements like `<license>` and `<developers>` from the
-parent.
-To prevent this, the project POM contains empty overrides for these elements.
-If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
+## 依赖
 
+| 依赖 | 说明 | 版本 |
+| --- | --- | --- |
+| spring-boot-starter-web | web依赖 | 2.6.2 |
+| spring-boot-starter-webflux | webflux依赖 | 2.6.2 |
+| langchain4j-spring-boot-starter | langchain4j依赖 | 0.34.0 |
