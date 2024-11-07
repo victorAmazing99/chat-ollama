@@ -2,7 +2,7 @@
 
 ## 介绍
 
-Chat-ollama是一个基于Ollama的聊天机器人demo，可以用来快速构建一个基于Ollama的聊天机器人。
+随着AIGC的发展，AI chat模型的大火，带来的是大量的模型开源，ollama的出现，使得大模型的api调用更加的规范化，Chat-ollama是一个基于Ollama的聊天机器人demo，可以用来快速构建一个基于Ollama的聊天机器人。
 
 因基于Ollama 需要自行搭建，对于Ollama的使用可以参考[Ollama官网](https://ollama.com/)
 
