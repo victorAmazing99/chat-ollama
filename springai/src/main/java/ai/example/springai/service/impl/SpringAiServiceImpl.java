@@ -4,6 +4,7 @@ import ai.example.springai.read.ParagraphTextReader;
 import ai.example.springai.service.SpringAiService;
 import cn.hutool.core.lang.hash.Hash;
 import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.ObjectUtil;
 import jakarta.annotation.Resource;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
@@ -45,7 +46,7 @@ public class SpringAiServiceImpl implements SpringAiService {
 
     private static final String PATH = "/Users/caoyang/Documents/workspace/chat-ollama/rag/";
 
-    private static HashMap<String,List<Message>> chatHistory = new HashMap<>();
+    private static HashMap<String, List<Message>> chatHistory = new HashMap<>();
 
     private static Integer maxHistorySize = 10;
 
@@ -53,8 +54,12 @@ public class SpringAiServiceImpl implements SpringAiService {
     public SpringAiServiceImpl(OllamaChatModel chatModel) {
         this.chatModel = chatModel;
     }
+
     @Override
     public String sendMessage(String message) {
+
+        SystemMessage systemMessage = new SystemMessage("使用中文回答");
+
         ChatResponse response = chatModel.call(new Prompt(message, OllamaOptions.create()
                 //  .withModel("llama3:8b")   //可动态选择模型
                 .withTemperature(0.4)));
@@ -62,27 +67,91 @@ public class SpringAiServiceImpl implements SpringAiService {
     }
 
     @Override
-    public String sendMessage2(String sessionId,String message) {
+    public String sendMessage2(String sessionId, String message) {
         //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys =chatHistory.get(sessionId);
+        List<Message> chatHistorys = chatHistory.get(sessionId);
         //判断chatHistoryMap是否为空
-        if(chatHistorys == null){
+        if (chatHistorys == null) {
             //如果为空,则创建一个会话list
             chatHistorys = new ArrayList<>();
-            chatHistory.put(sessionId,chatHistorys);
-        }else{
+            chatHistory.put(sessionId, chatHistorys);
+        } else {
 
-            if(chatHistorys.size() > maxHistorySize){
-                chatHistorys = chatHistorys.subList(chatHistorys.size()-maxHistorySize-1,chatHistorys.size());
+            if (chatHistorys.size() > maxHistorySize) {
+                chatHistorys = chatHistorys.subList(chatHistorys.size() - maxHistorySize - 1, chatHistorys.size());
             }
         }
         //将提问进行记忆
-        chatHistorys.add(chatHistorys.size(),new UserMessage(message));
+        chatHistorys.add(chatHistorys.size(), new UserMessage(message));
         ChatResponse response = chatModel.call(new Prompt(chatHistorys));
-        chatHistorys.add(chatHistorys.size(),new AssistantMessage(response.getResult().getOutput().getContent()));
+        chatHistorys.add(chatHistorys.size(), new AssistantMessage(response.getResult().getOutput().getContent()));
         return response.getResult().getOutput().getContent();
+    }
+
+    @Override
+    public Flux<String> chatRag(String uuid, String message) {
+
+        //根据不同会话Id，获取历史记忆
+        List<Message> chatHistorys = chatHistory.get(uuid);
+        //判断chatHistoryMap是否为空
+        if (chatHistorys == null) {
+            //如果为空,则创建一个会话list
+            chatHistorys = new ArrayList<>();
+            chatHistory.put(uuid, chatHistorys);
+        } else {
+
+            if (chatHistorys.size() > maxHistorySize) {
+                chatHistorys = chatHistorys.subList(chatHistorys.size() - maxHistorySize - 1, chatHistorys.size());
+            }
         }
 
+
+        //查询获取文档信息
+        List<Document> documents = vectorStore.similaritySearch(message);
+
+
+        //提取文本内容
+        String content = documents.stream()
+                .filter(document -> {
+                    Object scoreObj = document.getMetadata().get("vector_score");
+                    if (scoreObj instanceof Double) {
+                        double score = (Double) scoreObj;
+                        return score > 0.7;
+                    }
+                    return false;
+                })
+                .map(Document::getContent)
+                .collect(Collectors.joining("\n"));
+
+        if(content.length() == 0) {
+         return Flux.just("文档中没有相关信息");
+        }
+
+        String systemInfo = "根据以下提供的文档使用简体中文回答问题:\n" + content +
+                "不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。";
+
+        chatHistorys.add(chatHistorys.size(), new UserMessage(message));
+
+        List<Message> messages = new ArrayList<>();
+        messages.addAll(chatHistorys);
+        messages.add(new SystemMessage(systemInfo));
+
+        //将提问进行记忆
+        Flux<String> result = chatModel.stream(new Prompt(messages))
+                .map(response -> response.getResult().getOutput().getContent());
+
+        StringBuilder resultString = new StringBuilder();
+        List<Message> resultMessage = chatHistorys;
+        // 每接收到一个字符串就追加到 StringBuilder
+        result.doOnNext(o -> resultString.append(o))
+                .doOnComplete(() -> {
+                    // 当 Flux 完成时，添加 AssistantMessage 到 chatHistorys
+                    resultMessage.add(new AssistantMessage(resultString.toString()));
+                })
+                .subscribe();
+
+        return result;
+    }
 
 
     @Override
@@ -127,9 +196,9 @@ public class SpringAiServiceImpl implements SpringAiService {
     @Override
     public List<Document> search(String keyword) {
         return mergeDocuments(vectorStore.similaritySearch(SearchRequest.defaults()
-                        .withQuery(keyword)
-                        .withTopK(4)
-                        .withSimilarityThreshold(0.4f)));
+                .withQuery(keyword)
+                .withTopK(4)
+                .withSimilarityThreshold(0.4f)));
     }
 
 
@@ -148,6 +217,7 @@ public class SpringAiServiceImpl implements SpringAiService {
 
     /**
      * 使用文档chroma，pgvtegre
+     *
      * @param documentList
      * @return
      */
@@ -215,7 +285,6 @@ public class SpringAiServiceImpl implements SpringAiService {
         ChatResponse chatResponse = chatModel.call(prompt);
         return chatResponse.getResult().getOutput().getContent();
     }
-
 
 
 }

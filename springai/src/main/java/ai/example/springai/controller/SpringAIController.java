@@ -72,4 +72,14 @@ public class SpringAIController {
     }
 
 
+    @Operation(summary = "Rag记忆问答")
+    @RequestMapping("/chat2")
+    public Flux<String> chatRag(@RequestParam("uuid")String uuid,@RequestParam("message") String message) {
+        if(uuid == null){
+            uuid = "1";
+        }
+        return service.chatRag(uuid,message);
+    }
+
+
 }
