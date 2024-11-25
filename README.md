@@ -22,3 +22,10 @@
 | spring-boot-starter-web | web依赖 | 2.6.2 |
 | spring-boot-starter-webflux | webflux依赖 | 2.6.2 |
 | langchain4j-spring-boot-starter | langchain4j依赖 | 0.34.0 |
+
+
+
+## Ollama
+
+目前项目使用的Rag，如果不想使用Rag可以微调大模型，虽然微调模型可以使模型的垂直领域回答更加精准，但常规问题会降低，微调
+建议使用unsloth进行模型微调，并生成ollama可读大模型，需要开发者学习python等。
