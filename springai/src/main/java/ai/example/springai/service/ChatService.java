@@ -7,14 +7,10 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 
-public interface SpringAiService {
+public interface ChatService {
     public String sendMessage(String message);
 
     Flux<ChatResponse> generateStream(String message);
-
-    void uploadDocument(MultipartFile file);
-
-    List<Document> search(String keyword);
 
     String ragChat(String message);
 

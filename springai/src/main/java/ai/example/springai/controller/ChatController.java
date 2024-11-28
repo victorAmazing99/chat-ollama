@@ -1,26 +1,22 @@
 package ai.example.springai.controller;
 
 
-import ai.example.springai.service.SpringAiService;
+import ai.example.springai.service.ChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
-
-import java.util.List;
 
 @CrossOrigin
 @RestController
 @RequestMapping(value = "/springaiChat")
-public class SpringAIController {
+public class ChatController {
 
     @Autowired
-    SpringAiService service;
+    ChatService service;
 
     /**
      * 基础的模型访问
@@ -51,18 +47,7 @@ public class SpringAIController {
         return service.generateStream(message);
     }
 
-    @Operation(summary = "上传文档")
-    @PostMapping("/upload")
-    public ResponseEntity upload(@RequestBody MultipartFile file) {
-        service.uploadDocument(file);
-        return ResponseEntity.ok("success");
-    }
 
-    @Operation(summary = "搜索文档")
-    @GetMapping("/search")
-    public ResponseEntity<List<Document>> searchDoc(@RequestParam String keyword) {
-        return ResponseEntity.ok(service.search(keyword));
-    }
 
 
     @Operation(summary = "Rag问答文档")
