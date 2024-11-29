@@ -17,8 +17,9 @@
 <body>
 <h1>流式访问Ai</h1>
 选择AI智能体<select id="appselect" name="appSelect">
-    <option value="langchain4j">langchain4j</option>
-    <option value="springai">springai</option>
+    <option value="langchain4j">langchain4j(字符串回显)</option>
+    <option value="springai">springai(Json回显)</option>
+    <option value="springaiChatString">springai(字符串回显)</option>
 </select>
 <br/><br/>
 <textarea id="nameInput" rows="5" cols="50" placeholder="Enter your quersiton"></textarea>
@@ -34,8 +35,10 @@
 
         if (appSelect.value === 'springai') {
             url = `http://127.0.0.1:9999/springaiChat/message3?message=${encodeURIComponent(name)}`;
-        } else {
+        } else if(appSelect.value === 'springaiChatString'){
             url = `http://127.0.0.1:9999/springaiChat/chat2?message=${encodeURIComponent(name)}&uuid=2`;
+        }else {
+            url = `http://127.0.0.1:9998/langchain4jChat/steamAssistant?message=${encodeURIComponent(name)}`;
         }
 
         try {
