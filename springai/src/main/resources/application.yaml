@@ -19,5 +19,3 @@ spring:
         index: chat-ollama
         initialize-schema: true
         prefix: "chat-ollama:"
-    rag:
-      path: /Users/caoyang/Documents/workspace/chat-ollama/rag/
