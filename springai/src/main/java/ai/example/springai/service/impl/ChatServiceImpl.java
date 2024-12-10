@@ -11,7 +11,6 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaOptions;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -54,18 +53,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public String sendMessage2(String sessionId, String message) {
         //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys = chatHistory.get(sessionId);
-        //判断chatHistoryMap是否为空
-        if (chatHistorys == null) {
-            //如果为空,则创建一个会话list
-            chatHistorys = new ArrayList<>();
-            chatHistory.put(sessionId, chatHistorys);
-        } else {
-
-            if (chatHistorys.size() > maxHistorySize) {
-                chatHistorys = chatHistorys.subList(chatHistorys.size() - maxHistorySize - 1, chatHistorys.size());
-            }
-        }
+        List<Message> chatHistorys =getHistory(sessionId);
         //将提问进行记忆
         chatHistorys.add(chatHistorys.size(), new UserMessage(message));
         ChatResponse response = chatModel.call(new Prompt(chatHistorys));
@@ -77,18 +65,7 @@ public class ChatServiceImpl implements ChatService {
     public Flux<String> chatRag(String uuid, String message) {
 
         //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys = chatHistory.get(uuid);
-        //判断chatHistoryMap是否为空
-        if (chatHistorys == null) {
-            //如果为空,则创建一个会话list
-            chatHistorys = new ArrayList<>();
-            chatHistory.put(uuid, chatHistorys);
-        } else {
-
-            if (chatHistorys.size() > maxHistorySize) {
-                chatHistorys = chatHistorys.subList(chatHistorys.size() - maxHistorySize - 1, chatHistorys.size());
-            }
-        }
+        List<Message> chatHistorys = getHistory(uuid);
 
         //查询获取文档信息
         List<Document> documents = ragService.search(message);
@@ -162,5 +139,24 @@ public class ChatServiceImpl implements ChatService {
         return chatResponse.getResult().getOutput().getContent();
     }
 
+
+    private List<Message> getHistory(String uuid) {
+        //根据不同会话Id，获取历史记忆
+        List<Message> chatHistorys = chatHistory.get(uuid);
+        //判断chatHistoryMap是否为空
+        if (chatHistorys == null) {
+            //如果为空,则创建一个会话list
+            chatHistorys = new ArrayList<>();
+            chatHistory.put(uuid, chatHistorys);
+        } else {
+
+            if (chatHistorys.size() > maxHistorySize) {
+                chatHistorys = chatHistorys.subList(chatHistorys.size() - maxHistorySize - 1, chatHistorys.size());
+            }
+        }
+
+        return chatHistorys;
+
+    }
 
 }
