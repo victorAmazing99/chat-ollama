@@ -17,4 +17,6 @@ public interface ChatService {
     String sendMessage2(String sessionId,String message);
 
     Flux<String> chatRag(String uuid, String message);
+
+    String chatImage(MultipartFile file, String message);
 }

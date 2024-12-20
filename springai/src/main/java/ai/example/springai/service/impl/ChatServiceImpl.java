@@ -7,15 +7,20 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.model.Media;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -106,6 +111,28 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    public String chatImage(MultipartFile file, String message) {
+        String Base64Image = null;
+        try {
+            Base64Image = Base64.getEncoder().encodeToString(file.getBytes());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (Base64Image != null) {
+          //  UserMessage userMessage = new UserMessage("使用中文回答");
+            UserMessage userMessage1 = new UserMessage("使用中文回答:"+message, Media.builder().data(Base64Image).mimeType(MimeTypeUtils.ALL).build());
+            List<Message> messages = new ArrayList<>();
+           // messages.add(userMessage);
+            messages.add(userMessage1);
+            return chatModel.call(new Prompt(messages)).getResult().getOutput().getContent().toString();
+        }
+
+        return null;
+    }
+
+
+    @Override
     public Flux<ChatResponse> generateStream(String message) {
         Prompt prompt = new Prompt(new UserMessage(message));
         return chatModel.stream(prompt);
@@ -130,10 +157,10 @@ public class ChatServiceImpl implements ChatService {
         messages.add(systemMessage);
         messages.add(userMessage);
 
-        Prompt prompt = new Prompt(messages, OllamaOptions.create()
-                //  .withModel("llama3:8b")
-                .withMainGPU(1)
-                .withTemperature(0.4));
+        Prompt prompt = new Prompt(messages, ChatOptions.builder()
+                .model("llama3.8b")
+                .maxTokens(1024)
+                .build());
 
         ChatResponse chatResponse = chatModel.call(prompt);
         return chatResponse.getResult().getOutput().getContent();

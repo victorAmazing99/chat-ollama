@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
 @CrossOrigin
@@ -64,6 +65,12 @@ public class ChatController {
             uuid = "1";
         }
         return service.chatRag(uuid,message);
+    }
+
+    @Operation(summary = "图片解答")
+    @PostMapping("/chatImage")
+    public ResponseEntity chatImage( @RequestParam MultipartFile file, @RequestParam String message) {
+        return ResponseEntity.ok(service.chatImage(file,message));
     }
 
 

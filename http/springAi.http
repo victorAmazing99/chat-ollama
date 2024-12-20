@@ -3,6 +3,11 @@ GET http://localhost:9999/springaiChat/message2?message=我是victor
 Accept: application/json
 
 ###
+GET http://localhost:9999/springaiChat/chatImage?message=我是victor
+Accept: application/json
+
+
+###
 GET http://localhost:9999/springaiChat/message?message=我是谁
 Accept: application/json
 
