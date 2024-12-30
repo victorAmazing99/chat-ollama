@@ -13,7 +13,9 @@
 ### 项目结构
 项目中主要使用了langchain4j 与 spring-ai 2套框架进行搭建，如需自行搭中可按自己所需进行框架选择。
  
-项目中的Rag 使用了redis，因此需要redis配置。但langchain4j 与 spring-ai 支持更多的向量数据库，如需更改可自行选择
+项目中的Rag 使用了redis，因此需要redis配置。但langchain4j 与 spring-ai 支持更多的向量数据库，如需更改可自行选择 
+
+因为reis 7.0后的版本才支持RAG，使用时要使用7.0之后的版本
 
 ## 依赖
 
