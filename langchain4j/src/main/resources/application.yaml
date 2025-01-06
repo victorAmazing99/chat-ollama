@@ -7,20 +7,21 @@ spring:
 langchain4j:
   ollama:
     chat-model:
-      model-name: qwen2:latest
-      base-url: http://192.168.0.:11434
+      model-name: llava:latest
+      base-url: http://192.168.0.26:11434
       top-k: 5
       top-p:  0.9
       temperature: 0.4
+      timeout: 4000000
     streaming-chat-model:
-      model-name: qwen2:latest
-      base-url: http://192.168.0.:11434
+      model-name: llava
+      base-url: http://192.168.0.26:11434
       top-k: 5
       top-p: 0.9
       temperature: 0.4
     embedding-model:
       model-name: nomic-embed-text:latest
-      base-url: http://192.168.0.:11434
+      base-url: http://192.168.0.26:11434
   store:
     redis:
       host: localhost

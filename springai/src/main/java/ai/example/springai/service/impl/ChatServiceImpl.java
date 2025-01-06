@@ -1,7 +1,12 @@
 package ai.example.springai.service.impl;
 
 import ai.example.springai.service.ChatService;
+import ch.qos.logback.core.net.SyslogOutputStream;
 import jakarta.annotation.Resource;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -12,6 +17,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.model.Media;
 import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,7 +36,7 @@ import java.util.stream.Collectors;
 public class ChatServiceImpl implements ChatService {
 
     @Resource
-    OllamaChatModel chatModel;
+    static OllamaChatModel chatModel;
 
     @Autowired
     RagServiceImpl ragService;
@@ -58,7 +64,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public String sendMessage2(String sessionId, String message) {
         //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys =getHistory(sessionId);
+        List<Message> chatHistorys = getHistory(sessionId);
         //将提问进行记忆
         chatHistorys.add(chatHistorys.size(), new UserMessage(message));
         ChatResponse response = chatModel.call(new Prompt(chatHistorys));
@@ -80,8 +86,8 @@ public class ChatServiceImpl implements ChatService {
                 .map(Document::getContent)
                 .collect(Collectors.joining("\n"));
 
-        if(content.length() == 0) {
-         return Flux.just("文档中没有相关信息");
+        if (content.length() == 0) {
+            return Flux.just("文档中没有相关信息");
         }
 
         String systemInfo = "根据以下提供的文档使用简体中文回答问题:\n" + content +
@@ -120,11 +126,11 @@ public class ChatServiceImpl implements ChatService {
         }
 
         if (Base64Image != null) {
-          //  UserMessage userMessage = new UserMessage("使用中文回答");
-            UserMessage userMessage1 = new UserMessage("使用中文回答:"+message, Media.builder().data(Base64Image).mimeType(MimeTypeUtils.ALL).build());
+            //  UserMessage userMessage = new UserMessage("使用中文回答");
+            UserMessage userMessage = new UserMessage("使用中文回答:" + message, Media.builder().data(Base64Image).mimeType(MimeTypeUtils.ALL).build());
             List<Message> messages = new ArrayList<>();
-           // messages.add(userMessage);
-            messages.add(userMessage1);
+            // messages.add(userMessage);
+            messages.add(userMessage);
             return chatModel.call(new Prompt(messages)).getResult().getOutput().getContent().toString();
         }
 
@@ -141,7 +147,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public String ragChat(String message) {
         //查询获取文档信息
-        List<Document> documents =ragService.search(message);
+        List<Document> documents = ragService.search(message);
 
         //提取文本内容
         String content = documents.stream()
@@ -149,7 +155,7 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.joining("\n"));
 
         String systemInfo = "根据以下提供的文档使用简体中文回答问题:\n" + content +
-                "不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。";
+                "不要使用其他知识。如果文档中没有答案，回复'文档中没有相关信息'。";
 
         SystemMessage systemMessage = new SystemMessage(systemInfo);
         UserMessage userMessage = new UserMessage(message);
@@ -183,7 +189,21 @@ public class ChatServiceImpl implements ChatService {
         }
 
         return chatHistorys;
+    }
 
+    public static void main(String[] args) {
+
+        ChatMemory chatMemory = new InMemoryChatMemory();
+        OllamaChatModel chatModel1 = OllamaChatModel.builder()
+                .ollamaApi(new OllamaApi("http://192.168.0.26:11434"))
+                .defaultOptions(OllamaOptions.builder().model("llava").build())
+                .build();
+
+        var chatClient = ChatClient.builder(chatModel1).defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory,"UUID",100)).build();
+        String response =chatClient.prompt(new Prompt("Tell me a joke")).call().chatResponse().getResult().getOutput().getContent();
+
+        System.out.println(response);
+        System.out.println(chatMemory.get("UUID",100));
     }
 
 }

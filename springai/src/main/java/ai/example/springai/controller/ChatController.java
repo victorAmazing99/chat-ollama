@@ -48,9 +48,7 @@ public class ChatController {
         return service.generateStream(message);
     }
 
-
-
-
+    
     @Operation(summary = "Rag问答文档")
     @GetMapping("/chat")
     public ResponseEntity chat(@RequestParam String message) {
