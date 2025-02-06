@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 public class ChatServiceImpl implements ChatService {
 
     @Resource
-    static OllamaChatModel chatModel;
+    OllamaChatModel chatModel;
 
     @Autowired
     RagServiceImpl ragService;
@@ -90,14 +90,16 @@ public class ChatServiceImpl implements ChatService {
             return Flux.just("文档中没有相关信息");
         }
 
-        String systemInfo = "根据以下提供的文档使用简体中文回答问题:\n" + content +
-                "不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。";
+        String systemInfo = """
+                根据以下提供的文档使用简体中文回答问题:{content}
+                不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。
+                """;
 
         chatHistorys.add(chatHistorys.size(), new UserMessage(message));
 
         List<Message> messages = new ArrayList<>();
         messages.addAll(chatHistorys);
-        messages.add(new SystemMessage(systemInfo));
+        messages.add(new SystemMessage(String.format(systemInfo, content)));
 
         //将提问进行记忆
         Flux<String> result = chatModel.stream(new Prompt(messages))
@@ -154,8 +156,10 @@ public class ChatServiceImpl implements ChatService {
                 .map(Document::getContent)
                 .collect(Collectors.joining("\n"));
 
-        String systemInfo = "根据以下提供的文档使用简体中文回答问题:\n" + content +
-                "不要使用其他知识。如果文档中没有答案，回复'文档中没有相关信息'。";
+        String systemInfo = """
+                根据以下提供的文档使用简体中文回答问题:\n" + content +
+                "不要使用其他知识。如果文档中没有答案，回复'文档中没有相关信息'。
+                """;
 
         SystemMessage systemMessage = new SystemMessage(systemInfo);
         UserMessage userMessage = new UserMessage(message);

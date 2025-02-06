@@ -9,7 +9,7 @@ spring:
       base-url: http://192.168.0.26:11434
       chat:
         options:
-          model: llava
+          model: qwen:7b
       embedding:
         options:
           model: mofanke/dmeta-embedding-zh:latest
