@@ -25,6 +25,7 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -91,7 +92,7 @@ public class ChatServiceImpl implements ChatService {
         }
 
         String systemInfo = """
-                根据以下提供的文档使用简体中文回答问题:{content}
+                根据以下提供的文档使用简体中文回答问题:{0}
                 不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。
                 """;
 
@@ -99,7 +100,7 @@ public class ChatServiceImpl implements ChatService {
 
         List<Message> messages = new ArrayList<>();
         messages.addAll(chatHistorys);
-        messages.add(new SystemMessage(String.format(systemInfo, content)));
+        messages.add(new SystemMessage(MessageFormat.format(systemInfo, content)));
 
         //将提问进行记忆
         Flux<String> result = chatModel.stream(new Prompt(messages))
@@ -157,11 +158,11 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.joining("\n"));
 
         String systemInfo = """
-                根据以下提供的文档使用简体中文回答问题:\n" + content +
-                "不要使用其他知识。如果文档中没有答案，回复'文档中没有相关信息'。
+                根据以下提供的文档使用简体中文回答问题:{0}
+                不要使用其他知识。如果文档中没有答案，回复'文档中没有相关信息'。
                 """;
 
-        SystemMessage systemMessage = new SystemMessage(systemInfo);
+        SystemMessage systemMessage = new SystemMessage(MessageFormat.format(systemInfo, content));
         UserMessage userMessage = new UserMessage(message);
         List<Message> messages = new ArrayList<>();
         messages.add(systemMessage);
