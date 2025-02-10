@@ -21,19 +21,18 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public void uploadDocument(MultipartFile file) throws IOException {
-        List<Document> documents =new TokenTextSplitter().transform(new TextReader(file.getResource()).read());
+        List<Document> documents = new TokenTextSplitter().transform(new TextReader(file.getResource()).read());
         vectorStore.write(documents);
     }
 
     @Override
     public List<Document> search(String keyword) {
-        return vectorStore.similaritySearch(SearchRequest.defaults()
-                .withQuery(keyword)
-                .withTopK(4)
-                .withSimilarityThreshold(0.7f));
+        return vectorStore.similaritySearch(SearchRequest.builder()
+                .topK(4)
+                .query(keyword)
+                .similarityThreshold(0.7f)
+                .build());
     }
-
-
 
 
 }

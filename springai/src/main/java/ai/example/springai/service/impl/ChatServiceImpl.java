@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
 @Service
 public class ChatServiceImpl implements ChatService {
 
-    @Resource
     OllamaChatModel chatModel;
 
     @Autowired
@@ -56,10 +55,9 @@ public class ChatServiceImpl implements ChatService {
 
         SystemMessage systemMessage = new SystemMessage("使用中文回答");
 
-        ChatResponse response = chatModel.call(new Prompt(message, OllamaOptions.create()
-                //  .withModel("llama3:8b")   //可动态选择模型
-                .withTemperature(0.4)));
-        return response.getResult().getOutput().getContent();
+        ChatResponse response = chatModel.call(new Prompt(message, OllamaOptions.builder()
+                .temperature(0.4).build()));
+        return response.getResult().getOutput().getText();
     }
 
     @Override
@@ -69,8 +67,7 @@ public class ChatServiceImpl implements ChatService {
         //将提问进行记忆
         chatHistorys.add(chatHistorys.size(), new UserMessage(message));
         ChatResponse response = chatModel.call(new Prompt(chatHistorys));
-        chatHistorys.add(chatHistorys.size(), new AssistantMessage(response.getResult().getOutput().getContent()));
-        return response.getResult().getOutput().getContent();
+        return response.getResult().getOutput().getText();
     }
 
     @Override
@@ -84,7 +81,7 @@ public class ChatServiceImpl implements ChatService {
 
         //提取文本内容
         String content = documents.stream()
-                .map(Document::getContent)
+                .map(Document::getText)
                 .collect(Collectors.joining("\n"));
 
         if (content.length() == 0) {
@@ -104,7 +101,7 @@ public class ChatServiceImpl implements ChatService {
 
         //将提问进行记忆
         Flux<String> result = chatModel.stream(new Prompt(messages))
-                .map(response -> response.getResult().getOutput().getContent());
+                .map(response -> response.getResult().getOutput().getText());
 
         StringBuilder resultString = new StringBuilder();
         List<Message> resultMessage = chatHistorys;
@@ -134,7 +131,7 @@ public class ChatServiceImpl implements ChatService {
             List<Message> messages = new ArrayList<>();
             // messages.add(userMessage);
             messages.add(userMessage);
-            return chatModel.call(new Prompt(messages)).getResult().getOutput().getContent().toString();
+            return chatModel.call(new Prompt(messages)).getResult().getOutput().getText().toString();
         }
 
         return null;
@@ -154,7 +151,7 @@ public class ChatServiceImpl implements ChatService {
 
         //提取文本内容
         String content = documents.stream()
-                .map(Document::getContent)
+                .map(Document::getText)
                 .collect(Collectors.joining("\n"));
 
         String systemInfo = """
@@ -174,7 +171,7 @@ public class ChatServiceImpl implements ChatService {
                 .build());
 
         ChatResponse chatResponse = chatModel.call(prompt);
-        return chatResponse.getResult().getOutput().getContent();
+        return chatResponse.getResult().getOutput().getText();
     }
 
 
@@ -205,7 +202,7 @@ public class ChatServiceImpl implements ChatService {
                 .build();
 
         var chatClient = ChatClient.builder(chatModel1).defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory,"UUID",100)).build();
-        String response =chatClient.prompt(new Prompt("Tell me a joke")).call().chatResponse().getResult().getOutput().getContent();
+        String response =chatClient.prompt(new Prompt("Tell me a joke")).call().chatResponse().getResult().getOutput().getText();
 
         System.out.println(response);
         System.out.println(chatMemory.get("UUID",100));

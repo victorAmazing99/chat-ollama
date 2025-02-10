@@ -8,6 +8,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.text.MessageFormat;
@@ -16,9 +17,9 @@ import java.util.Map;
 @Service
 public class PptServiceImpl implements PptService {
 
-    @Resource
     OllamaChatModel chatModel;
 
+    @Autowired
     public PptServiceImpl(OllamaChatModel chatModel) {
         this.chatModel = chatModel;
     }
