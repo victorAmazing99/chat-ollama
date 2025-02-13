@@ -14,7 +14,7 @@ public interface ChatService {
 
     String ragChat(String message);
 
-    String sendMessage2(String sessionId,String message);
+    String sendMessageWithHistory(String sessionId,String message);
 
     Flux<String> chatRag(String uuid, String message);
 

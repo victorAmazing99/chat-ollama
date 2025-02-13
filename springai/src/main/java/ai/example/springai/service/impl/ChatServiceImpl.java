@@ -1,8 +1,10 @@
 package ai.example.springai.service.impl;
 
 import ai.example.springai.service.ChatService;
-import ch.qos.logback.core.net.SyslogOutputStream;
-import jakarta.annotation.Resource;
+import ai.example.springai.service.RagService;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -20,192 +22,164 @@ import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-
 
 @Service
 public class ChatServiceImpl implements ChatService {
 
-    OllamaChatModel chatModel;
+    private static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
+
+    private static final String SYSTEM_PROMPT_TEMPLATE ="""
+    你是一个基于文档的问答助手。请严格根据以下提供的文档内容回答问题：
+    {0}
+    
+    注意：
+    1. 只能使用文档中的信息，禁止使用其他知识。
+    2. 如果文档中没有相关信息，请回复“文档中没有相关信息”。
+    3. 使用简体中文回答。
+    """;
+
+    private static final String IMAGE_PROMPT_PREFIX = "使用中文回答:";
+
+    private final OllamaChatModel chatModel;
+    private final RagService ragService;
+    private final Map<String, List<Message>> chatHistory;
+
+    @Value("${chat.history.max-size:10}")
+    private int maxHistorySize;
+
+    @Value("${ollama.model:llama3.8b}")
+    private String defaultModel;
 
     @Autowired
-    RagServiceImpl ragService;
-
-    private static HashMap<String, List<Message>> chatHistory = new HashMap<>();
-
-    private static Integer maxHistorySize = 10;
-
-    @Autowired
-    public ChatServiceImpl(OllamaChatModel chatModel) {
+    public ChatServiceImpl(OllamaChatModel chatModel, RagService ragService) {
         this.chatModel = chatModel;
+        this.ragService = ragService;
+        this.chatHistory = new ConcurrentHashMap<>();
     }
 
     @Override
     public String sendMessage(String message) {
-
         SystemMessage systemMessage = new SystemMessage("使用中文回答");
-
-        ChatResponse response = chatModel.call(new Prompt(message, OllamaOptions.builder()
-                .temperature(0.4).build()));
-        return response.getResult().getOutput().getText();
+        Prompt prompt = new Prompt(List.of(systemMessage, new UserMessage(message)),
+                OllamaOptions.builder().temperature(0.4).build());
+        return chatModel.call(prompt).getResult().getOutput().getText();
     }
 
     @Override
-    public String sendMessage2(String sessionId, String message) {
-        //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys = getHistory(sessionId);
-        //将提问进行记忆
-        chatHistorys.add(chatHistorys.size(), new UserMessage(message));
-        ChatResponse response = chatModel.call(new Prompt(chatHistorys));
-        return response.getResult().getOutput().getText();
+    public String sendMessageWithHistory(String sessionId, String message) {
+        List<Message> history = getOrCreateHistory(sessionId);
+        addUserMessage(history, message);
+
+        ChatResponse response = chatModel.call(new Prompt(history));
+        String answer = response.getResult().getOutput().getText();
+
+        addAssistantMessage(history, answer);
+        return answer;
     }
 
     @Override
-    public Flux<String> chatRag(String uuid, String message) {
+    public Flux<String> chatRag(String sessionId, String message) {
+        List<Message> history = getOrCreateHistory(sessionId);
+        addUserMessage(history, message);
 
-        //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys = getHistory(uuid);
-
-        //查询获取文档信息
         List<Document> documents = ragService.search(message);
-
-        //提取文本内容
-        String content = documents.stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n"));
-
-        if (content.length() == 0) {
+        if (documents.isEmpty()) {
             return Flux.just("文档中没有相关信息");
         }
 
-        String systemInfo = """
-                根据以下提供的文档使用简体中文回答问题:{0}
-                不要使用其他知识。如果文档中没有答案，请回复'文档中没有相关信息'。
-                """;
+        String context = buildContext(documents);
+        List<Message> promptMessages = buildRagPrompt(history, context);
 
-        chatHistorys.add(chatHistorys.size(), new UserMessage(message));
-
-        List<Message> messages = new ArrayList<>();
-        messages.addAll(chatHistorys);
-        messages.add(new SystemMessage(MessageFormat.format(systemInfo, content)));
-
-        //将提问进行记忆
-        Flux<String> result = chatModel.stream(new Prompt(messages))
-                .map(response -> response.getResult().getOutput().getText());
-
-        StringBuilder resultString = new StringBuilder();
-        List<Message> resultMessage = chatHistorys;
-        // 每接收到一个字符串就追加到 StringBuilder
-        result.doOnNext(o -> resultString.append(o))
-                .doOnComplete(() -> {
-                    // 当 Flux 完成时，添加 AssistantMessage 到 chatHistorys
-                    resultMessage.add(new AssistantMessage(resultString.toString()));
+        return chatModel.stream(new Prompt(promptMessages))
+                .doOnNext(response -> {
+                    String content = response.getResult().getOutput().getText();
+                    if (response.getResult().getOutput() instanceof AssistantMessage) {
+                        addAssistantMessage(history, content);
+                    }
                 })
-                .subscribe();
-
-        return result;
+                .map(response -> response.getResult().getOutput().getText());
     }
 
     @Override
     public String chatImage(MultipartFile file, String message) {
-        String Base64Image = null;
         try {
-            Base64Image = Base64.getEncoder().encodeToString(file.getBytes());
+            String base64Image = Base64.getEncoder().encodeToString(file.getBytes());
+            Media imageMedia = Media.builder().data(base64Image).mimeType(MimeTypeUtils.ALL).build();
+            UserMessage userMessage = new UserMessage(IMAGE_PROMPT_PREFIX + message, imageMedia);
+
+            return chatModel.call(new Prompt(List.of(userMessage)))
+                    .getResult()
+                    .getOutput()
+                    .getText();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("图片处理失败", e);
+            throw new RuntimeException("图片处理失败", e);
         }
-
-        if (Base64Image != null) {
-            //  UserMessage userMessage = new UserMessage("使用中文回答");
-            UserMessage userMessage = new UserMessage("使用中文回答:" + message, Media.builder().data(Base64Image).mimeType(MimeTypeUtils.ALL).build());
-            List<Message> messages = new ArrayList<>();
-            // messages.add(userMessage);
-            messages.add(userMessage);
-            return chatModel.call(new Prompt(messages)).getResult().getOutput().getText().toString();
-        }
-
-        return null;
     }
-
 
     @Override
     public Flux<ChatResponse> generateStream(String message) {
-        Prompt prompt = new Prompt(new UserMessage(message));
-        return chatModel.stream(prompt);
+        return chatModel.stream(new Prompt(new UserMessage(message)));
     }
 
     @Override
     public String ragChat(String message) {
-        //查询获取文档信息
         List<Document> documents = ragService.search(message);
-
-        //提取文本内容
-        String content = documents.stream()
-                .map(Document::getText)
-                .collect(Collectors.joining("\n"));
-
-        String systemInfo = """
-                根据以下提供的文档使用简体中文回答问题:{0}
-                不要使用其他知识。如果文档中没有答案，回复'文档中没有相关信息'。
-                """;
-
-        SystemMessage systemMessage = new SystemMessage(MessageFormat.format(systemInfo, content));
-        UserMessage userMessage = new UserMessage(message);
-        List<Message> messages = new ArrayList<>();
-        messages.add(systemMessage);
-        messages.add(userMessage);
-
-        Prompt prompt = new Prompt(messages, ChatOptions.builder()
-                .model("llama3.8b")
-                .maxTokens(1024)
-                .build());
-
-        ChatResponse chatResponse = chatModel.call(prompt);
-        return chatResponse.getResult().getOutput().getText();
-    }
-
-
-    private List<Message> getHistory(String uuid) {
-        //根据不同会话Id，获取历史记忆
-        List<Message> chatHistorys = chatHistory.get(uuid);
-        //判断chatHistoryMap是否为空
-        if (chatHistorys == null) {
-            //如果为空,则创建一个会话list
-            chatHistorys = new ArrayList<>();
-            chatHistory.put(uuid, chatHistorys);
-        } else {
-
-            if (chatHistorys.size() > maxHistorySize) {
-                chatHistorys = chatHistorys.subList(chatHistorys.size() - maxHistorySize - 1, chatHistorys.size());
-            }
+        if (documents.isEmpty()) {
+            return "文档中没有相关信息";
         }
 
-        return chatHistorys;
+        String context = buildContext(documents);
+        SystemMessage systemMessage = new SystemMessage(MessageFormat.format(SYSTEM_PROMPT_TEMPLATE, context));
+
+        Prompt prompt = new Prompt(
+                List.of(systemMessage, new UserMessage(message)),
+                ChatOptions.builder()
+                        .model(defaultModel)
+                        .maxTokens(1024)
+                        .build()
+        );
+
+        return chatModel.call(prompt).getResult().getOutput().getText();
     }
 
-    public static void main(String[] args) {
-
-        ChatMemory chatMemory = new InMemoryChatMemory();
-        OllamaChatModel chatModel1 = OllamaChatModel.builder()
-                .ollamaApi(new OllamaApi("http://192.168.0.26:11434"))
-                .defaultOptions(OllamaOptions.builder().model("llava").build())
-                .build();
-
-        var chatClient = ChatClient.builder(chatModel1).defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory,"UUID",100)).build();
-        String response =chatClient.prompt(new Prompt("Tell me a joke")).call().chatResponse().getResult().getOutput().getText();
-
-        System.out.println(response);
-        System.out.println(chatMemory.get("UUID",100));
+    private List<Message> getOrCreateHistory(String sessionId) {
+        return chatHistory.compute(sessionId, (k, v) -> {
+            if (v == null) return Collections.synchronizedList(new ArrayList<>());
+            if (v.size() > maxHistorySize) {
+                return v.subList(v.size() - maxHistorySize, v.size());
+            }
+            return v;
+        });
     }
 
+    private void addUserMessage(List<Message> history, String message) {
+        history.add(new UserMessage(message));
+    }
+
+    private void addAssistantMessage(List<Message> history, String message) {
+        history.add(new AssistantMessage(message));
+    }
+
+    private String buildContext(List<Document> documents) {
+        return documents.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n"));
+    }
+
+    private List<Message> buildRagPrompt(List<Message> history, String context) {
+        List<Message> promptMessages = new ArrayList<>(history);
+        promptMessages.add(0, new SystemMessage(MessageFormat.format(SYSTEM_PROMPT_TEMPLATE, context)));
+        return promptMessages;
+    }
 }

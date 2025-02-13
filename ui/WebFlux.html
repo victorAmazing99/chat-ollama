@@ -84,7 +84,7 @@
 
     function appendMessage(jsonData) {
 
-        const content = jsonData.result.output.content;
+        const content = jsonData.result.output.text;
 
         // 只显示新的内容
         if (content && !previousContent.includes(content)) {

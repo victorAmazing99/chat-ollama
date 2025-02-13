@@ -12,6 +12,11 @@ GET http://localhost:9999/springaiChat/message?message=我是谁
 Accept: application/json
 
 ###
+GET http://localhost:9999/springaiChat/chat?message=我是谁
+Accept: application/json
+
+
+###
 POST http://localhost:9999/springaiChat/message?message=我是谁
 Content-Type:application/x-www-form-urlencoded
 Accept: application/json

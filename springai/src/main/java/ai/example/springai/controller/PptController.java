@@ -15,7 +15,9 @@ public class PptController {
 
     @RequestMapping("/createPpt")
     public String createPpt(@RequestParam(name = "message") String message){
-        return pptService.createPpt(message);
+          String message1 =  pptService.createPpt(message);
+          System.out.println(message1);
+        return  message1;
     }
 
 }

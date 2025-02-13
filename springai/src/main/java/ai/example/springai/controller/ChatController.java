@@ -34,8 +34,8 @@ public class ChatController {
      * @return
      */
     @RequestMapping("/message2")
-    public String sendMessage2(@RequestParam(value = "sessionId",defaultValue = "1") String sessionId, @RequestParam(value = "message") String message) {
-        return  service.sendMessage2(sessionId,message);
+    public String sendMessageWithHistory(@RequestParam(value = "sessionId",defaultValue = "1") String sessionId, @RequestParam(value = "message") String message) {
+        return  service.sendMessageWithHistory(sessionId,message);
     }
 
     /**
