@@ -58,7 +58,7 @@ public class PptServiceImpl implements PptService {
 
         var outputConverter = new BeanOutputConverter<>(PowerPoint.class);
         OllamaOptions options = OllamaOptions.builder()
-                .format("json") // 强制指定JSON格式
+                .format(outputConverter.getJsonSchema()) // 强制指定JSON格式
                 .temperature(0.3) // 降低随机性
                 .numPredict(4096) // 允许更长的输出
                 .build();
