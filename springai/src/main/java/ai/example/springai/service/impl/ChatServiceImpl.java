@@ -71,7 +71,7 @@ public class ChatServiceImpl implements ChatService {
     public String sendMessage(String message) {
         SystemMessage systemMessage = new SystemMessage("使用中文回答");
         Prompt prompt = new Prompt(List.of(systemMessage, new UserMessage(message)),
-                OllamaOptions.builder().temperature(0.4).build());
+                OllamaOptions.builder().temperature(0.4).numGPU(0).build());
         return chatModel.call(prompt).getResult().getOutput().getText();
     }
 
@@ -88,14 +88,14 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public Flux<String> chatRag(String sessionId, String message) {
+    public Flux<ChatResponse> chatRag(String sessionId, String message) {
         List<Message> history = getOrCreateHistory(sessionId);
         addUserMessage(history, message);
 
         List<Document> documents = ragService.search(message);
-        if (documents.isEmpty()) {
-            return Flux.just("文档中没有相关信息");
-        }
+//        if (documents.isEmpty()) {
+//            return Flux.just("文档中没有相关信息");
+//        }
 
         String context = buildContext(documents);
         List<Message> promptMessages = buildRagPrompt(history, context);
@@ -106,8 +106,7 @@ public class ChatServiceImpl implements ChatService {
                     if (response.getResult().getOutput() instanceof AssistantMessage) {
                         addAssistantMessage(history, content);
                     }
-                })
-                .map(response -> response.getResult().getOutput().getText());
+                });
     }
 
     @Override

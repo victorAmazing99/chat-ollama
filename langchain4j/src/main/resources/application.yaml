@@ -12,9 +12,8 @@ langchain4j:
       top-k: 5
       top-p:  0.9
       temperature: 0.4
-      timeout: 4000000
     streaming-chat-model:
-      model-name: llava
+      model-name: qwen:7b
       base-url: http://192.168.0.26:11434
       top-k: 5
       top-p: 0.9

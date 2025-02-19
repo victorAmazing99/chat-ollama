@@ -16,7 +16,7 @@ public interface ChatService {
 
     String sendMessageWithHistory(String sessionId,String message);
 
-    Flux<String> chatRag(String uuid, String message);
+    Flux<ChatResponse> chatRag(String uuid, String message);
 
     String chatImage(MultipartFile file, String message);
 }

@@ -82,7 +82,7 @@ public class LangChain4jController {
      *
      * @return
      */
-    @GetMapping(value = "/steamAssistant", produces = MediaType.APPLICATION_NDJSON_VALUE)
+    @GetMapping(value = "/steamAssistant", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> steamAssistant(@RequestParam(value = "message", defaultValue = "What is the time now?") String message) {
         return Flux.create(emitter -> {
             streamingChatModel.generate(message, new StreamingResponseHandler<AiMessage>() {

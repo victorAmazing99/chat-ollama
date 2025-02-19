@@ -43,22 +43,22 @@ public class ChatController {
      * @param message
      * @return
      */
-    @RequestMapping(value = "/message3", produces = MediaType.APPLICATION_NDJSON_VALUE)
+    @RequestMapping(value = "/message3", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ChatResponse> generateStream(@RequestParam(value = "message", defaultValue = "Tell me a joke") String message) {
         return service.generateStream(message);
     }
 
     
     @Operation(summary = "Rag问答文档")
-    @GetMapping("/chat")
+    @GetMapping(value = "/chat")
     public ResponseEntity chat(@RequestParam String message) {
         return ResponseEntity.ok(service.ragChat(message));
     }
 
 
     @Operation(summary = "Rag记忆问答")
-    @RequestMapping("/chat2")
-    public Flux<String> chatRag(@RequestParam("uuid")String uuid,@RequestParam("message") String message) {
+    @RequestMapping(value="/chat2",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ChatResponse> chatRag(@RequestParam("uuid")String uuid,@RequestParam("message") String message) {
         if(uuid == null){
             uuid = "1";
         }
