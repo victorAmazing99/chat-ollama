@@ -28,7 +28,8 @@ public class RagServiceImpl implements RagService {
     @Override
     public List<Document> search(String keyword) {
 
-        return vectorStore.similaritySearch(SearchRequest.query(keyword).withTopK(4).withSimilarityThreshold(0.7f));
+        return vectorStore.similaritySearch(SearchRequest.builder().query(keyword).topK(4).similarityThreshold(0.7f).build());
+
     }
 
 
