@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIGC的流式调用</title>
-    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.5.13/vue.global.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/marked/15.0.6/marked.min.js"></script>
+    <script src="./vue.global.min.js"></script>
+    <script src="./marked.min.js"></script>
     <!-- Tailwind CSS -->
-    <link href="https://cdn.bootcdn.net/ajax/libs/daisyui/4.12.23/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="./full.min.css" rel="stylesheet" type="text/css" />
+    <script src="./tailwindcss.js"></script>
     <script>
         tailwind.config = {
             daisyui: {
@@ -278,8 +278,8 @@
                         directReasoning = data===''?' ':data
                     }else{
                         parsed = JSON.parse(data)
-                        content =  parsed.result.output.content
-                        directReasoning = parsed.result.output.content
+                        content =  parsed.result.output.text
+                        directReasoning = parsed.result.output.text
                     }
 
                     // 处理 think 标签包裹的情况
