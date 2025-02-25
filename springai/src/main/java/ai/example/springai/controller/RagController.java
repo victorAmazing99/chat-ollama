@@ -33,4 +33,10 @@ public class RagController {
     public ResponseEntity<List<Document>> searchDoc(@RequestParam String keyword) {
         return ResponseEntity.ok(service.search(keyword));
     }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        service.test();
+        return ResponseEntity.ok("success");
+    }
 }

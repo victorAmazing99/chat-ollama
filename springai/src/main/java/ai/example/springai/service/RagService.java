@@ -12,4 +12,5 @@ public interface RagService {
 
     List<Document> search(String keyword);
 
+    void test();
 }
