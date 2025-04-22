@@ -6,16 +6,34 @@ spring:
     name: chat-ollama
   ai:
     ollama:
-      base-url: http://192.168.0.26:11434
+      base-url: http://192.168.31.16:11434
       chat:
         options:
-          model: deepseek-r1:latest
+          model: qwen2.5:0.5b
       embedding:
         options:
-          model: mofanke/dmeta-embedding-zh:latest
+          model: zyw0605688/gte-large-zh:latest
+          max-tokens: 4096
+
     vectorstore:
       redis:
         uri: http://127.0.0.1:6379
         index: chat-ollama
         initialize-schema: true
         prefix: "chat-ollama:"
+        vector-dimension: 1024
+
+    mcp:
+      client:
+        sse:
+          connections:
+            server1:
+              url: http://127.0.0.1:8090
+        type: async
+        toolcallback:
+          enabled: true
+
+
+
+
+

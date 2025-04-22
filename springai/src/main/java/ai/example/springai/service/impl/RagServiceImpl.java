@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class RagServiceImpl implements RagService {
@@ -25,6 +27,7 @@ public class RagServiceImpl implements RagService {
     private VectorStore vectorStore;
 
     private OllamaEmbeddingModel embeddingModel;
+
     @Autowired
     public RagServiceImpl(OllamaEmbeddingModel embeddingModel) {
         this.embeddingModel = embeddingModel;
@@ -32,7 +35,15 @@ public class RagServiceImpl implements RagService {
 
     @Override
     public void uploadDocument(MultipartFile file) throws IOException {
-        List<Document> documents = new TokenTextSplitter().transform(new TextReader(file.getResource()).read());
+        TextReader reader = new TextReader(file.getResource());
+        reader.getCustomMetadata().put("fileName",file.getName());
+        List<Document> documents = new TokenTextSplitter().transform(reader.read());
+
+       documents = documents.parallelStream().map(document -> {
+            document.getMetadata().put("createdAt", LocalDateTime.now());
+            return document;
+        }).toList();
+
         vectorStore.write(documents);
     }
 
@@ -55,13 +66,13 @@ public class RagServiceImpl implements RagService {
                 经过数日的努力，艾莉亚终于找到了传说中的宝藏——并非金银财宝，而是关于自我认知和个人成长的知识。通过这次经历，她不仅学会了如何在复杂多变的环境中生存，更重要的是，她发现了内心深处未曾察觉的力量。              
                 最终，艾莉亚带着满满的收获回到了村庄，但她知道，这只是她人生旅程的一个开始。未来还有更多的未知等待着她去探索。                       
                 """;
-        VectorBasedSplitter splitter = new VectorBasedSplitter(embeddingModel);
-        List<String> result = splitter.splitAndMerge(text, 0.8);
+        Document document = new Document(text);
+        document.getMetadata().put("fileName","迷途之森");
 
-        System.out.println("Resulting Segments:");
-        for (String segment : result) {
-            System.out.println("[split]"+segment+"[/split]");
-        }
+        VectorBasedSplitter splitter = new VectorBasedSplitter(embeddingModel);
+
+        vectorStore.write(splitter.transform(List.of(document)));
+
     }
 
 }

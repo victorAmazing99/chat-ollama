@@ -17,9 +17,14 @@ Accept: application/json
 
 
 ###
-POST http://localhost:9999/springaiChat/message?message=我是谁
+GET http://localhost:9999/springPpt/createPpt?message=反腐倡廉
 Content-Type:application/x-www-form-urlencoded
 Accept: application/json
 
+###
+GET http://localhost:9999/springaiRag/test
+Accept: application/json
 
-
+###
+GET http://localhost:9999/springaiChat/testMcp
+Accept: application/json

@@ -3,6 +3,7 @@ package ai.example.springai.service.impl;
 import ai.example.springai.service.ChatService;
 import ai.example.springai.service.RagService;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -16,11 +17,12 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.document.Document;
-import org.springframework.ai.model.Media;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,21 +40,25 @@ public class ChatServiceImpl implements ChatService {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
-    private static final String SYSTEM_PROMPT_TEMPLATE ="""
-    你是一个基于文档的问答助手。请严格根据以下提供的文档内容回答问题：
-    {0}
-    
-    注意：
-    1. 只能使用文档中的信息，禁止使用其他知识。
-    2. 如果文档中没有相关信息，请回复“文档中没有相关信息”。
-    3. 使用简体中文回答。
-    """;
+    private static final String SYSTEM_PROMPT_TEMPLATE = """
+            你是一个基于文档的问答助手。请严格根据以下提供的文档内容回答问题：
+            {0}
+                
+            注意：
+            1. 只能使用文档中的信息，禁止使用其他知识。
+            2. 如果文档中没有相关信息，请回复“文档中没有相关信息”。
+            3. 使用简体中文回答。
+            """;
 
     private static final String IMAGE_PROMPT_PREFIX = "使用中文回答:";
 
     private final OllamaChatModel chatModel;
+
     private final RagService ragService;
     private final Map<String, List<Message>> chatHistory;
+
+
+    private final ChatClient chatClient;
 
     @Value("${chat.history.max-size:10}")
     private int maxHistorySize;
@@ -61,10 +67,12 @@ public class ChatServiceImpl implements ChatService {
     private String defaultModel;
 
     @Autowired
-    public ChatServiceImpl(OllamaChatModel chatModel, RagService ragService) {
+    public ChatServiceImpl(OllamaChatModel chatModel, RagService ragService,ToolCallbackProvider toolCallbackProvider
+    ) {
         this.chatModel = chatModel;
         this.ragService = ragService;
         this.chatHistory = new ConcurrentHashMap<>();
+        this.chatClient= ChatClient.builder(chatModel).defaultTools(toolCallbackProvider.getToolCallbacks()).build();
     }
 
     @Override
@@ -180,5 +188,12 @@ public class ChatServiceImpl implements ChatService {
         List<Message> promptMessages = new ArrayList<>(history);
         promptMessages.add(0, new SystemMessage(MessageFormat.format(SYSTEM_PROMPT_TEMPLATE, context)));
         return promptMessages;
+    }
+
+    @Override
+    public String testChatClient() {
+        String result = chatModel.call("现在是北京时间什么时候");
+        String result1 = chatClient.prompt().user("现在是北京时间什么时候").call().content();
+        return "no mcp:" + result + "\n mcp:" + result1;
     }
 }

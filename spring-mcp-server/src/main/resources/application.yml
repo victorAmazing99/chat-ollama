@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: spring-mcp-server
+  ai:
+    mcp:
+      server:
+        version: 1.0.0
+        type: async
+
+server:
+  port: 8090

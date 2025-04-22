@@ -71,5 +71,11 @@ public class ChatController {
         return ResponseEntity.ok(service.chatImage(file,message));
     }
 
+    @Operation(summary = "测试mcp")
+    @GetMapping("/testMcp")
+    public ResponseEntity testMcp(){
+        return ResponseEntity.ok(service.testChatClient());
+    }
+
 
 }

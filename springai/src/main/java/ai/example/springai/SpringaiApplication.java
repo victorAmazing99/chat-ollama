@@ -10,4 +10,5 @@ public class SpringaiApplication {
         SpringApplication.run(SpringaiApplication.class, args);
     }
 
+
 }

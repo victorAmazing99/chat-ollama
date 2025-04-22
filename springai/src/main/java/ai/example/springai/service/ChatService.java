@@ -19,4 +19,6 @@ public interface ChatService {
     Flux<ChatResponse> chatRag(String uuid, String message);
 
     String chatImage(MultipartFile file, String message);
+
+    String testChatClient();
 }
